@@ -5,7 +5,7 @@ Created on Fri Sep  3 10:34:37 2021
 @author: padel
 """
 import os
-os.chdir(r'C:\Users\padel\OneDrive\Desktop\improved_contrastive_divergence-master')
+# os.chdir(r'C:\Users\padel\OneDrive\Desktop\improved_contrastive_divergence-master')
 
 import tensorflow as tf
 import numpy as np
