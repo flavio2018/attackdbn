@@ -1,4 +1,6 @@
 import torch
+import torch.nn.functional as F
+import tqdm
 
 from flags import get_flags, gen_image
 
@@ -20,6 +22,9 @@ def fgsm_attack(image, epsilon, data_grad):
 def test(model, device, test_loader, epsilon, num_steps=1):
     correct = 0
     adv_examples = []
+
+    FLAGS = get_flags()
+
     # Loop over all examples in test set
     for data, target in tqdm.tqdm(test_loader):
         # Send the data and label to the device
