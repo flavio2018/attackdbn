@@ -20,7 +20,7 @@ import pickle as pkl
 # from datasets import Cifar10, CelebAHQ, Mnist, ImageNet, LSUNBed, STLDataset
 #from models_real import ResNetModel, CelebAModel, MNISTModel, ImagenetModel #Uncomment for real use
 import os.path as osp
-from logger import TensorBoardOutputFormat
+# from logger import TensorBoardOutputFormat
 from utils import ReplayBuffer, ReservoirBuffer
 from tqdm import tqdm
 import random
@@ -30,7 +30,7 @@ from io import StringIO
 from tensorflow.core.util import event_pb2
 import torch
 import numpy as np
-from scipy.misc import imsave
+from imageio import imwrite as imsave
 import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'gray'
 
