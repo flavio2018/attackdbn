@@ -17,7 +17,7 @@ import time
 from multiprocessing import Process
 import pickle as pkl
 
-from datasets import Cifar10, CelebAHQ, Mnist, ImageNet, LSUNBed, STLDataset
+# from datasets import Cifar10, CelebAHQ, Mnist, ImageNet, LSUNBed, STLDataset
 #from models_real import ResNetModel, CelebAModel, MNISTModel, ImagenetModel #Uncomment for real use
 import os.path as osp
 from logger import TensorBoardOutputFormat
