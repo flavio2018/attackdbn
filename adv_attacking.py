@@ -5,7 +5,8 @@ Created on Mon Aug  2 11:50:50 2021
 @author: Alessandro Padella
 """
 
-# Codes inspired to codes at AGGIUNGILINK ADV
+# Codes inspired to codes at https://jaketae.github.io/study/fgsm/ and
+# https://pytorch.org/tutorials/beginner/fgsm_tutorial.html
 
 import os
 import pickle
