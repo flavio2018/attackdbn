@@ -48,8 +48,8 @@ def get_flags():
     FLAGS = flags.FLAGS
     
     # Distributed training hyperparameters
-    #flags.DEFINE_integer('nodes', 1,
-    #    'number of nodes for training')
+    flags.DEFINE_integer('nodes', 1,
+        'number of nodes for training')
     flags.DEFINE_integer('gpus', 1,
         'number of gpus per nodes')
     flags.DEFINE_integer('node_rank', 0,
