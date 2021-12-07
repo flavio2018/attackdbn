@@ -95,7 +95,7 @@ def test(model, device, test_loader, epsilon, params, num_steps=1):
     return final_acc, adv_examples
 
 
-def test_adv(model, params, epsilons=list([0, .05, .1, .15, .2, .25, .3]), steps=1):
+def test_adv(model, device, params, epsilons=list([0, .05, .1, .15, .2, .25, .3]), steps=1):
     accuracies = list()
     examples = list()
 
