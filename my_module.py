@@ -46,7 +46,7 @@ def test(model, device, test_loader, epsilon, params, num_steps=1):
         # Calculate the loss
         # print(target)
 
-        loss = F.nll_loss(output, target)
+        loss = functional.nll_loss(output, target)
 
         # Zero all existing gradients
         model.zero_grad()
@@ -62,8 +62,8 @@ def test(model, device, test_loader, epsilon, params, num_steps=1):
 
         # If requested, reconstruct the input iterating forward-backward dynamics
         if num_steps != 1:
-            perturbed_data = gen_image(
-                None, params, model, perturbed_data, num_steps=num_steps, sample=False)[0]
+            for __ in range(num_steps):
+                perturbed_data, __ = model.dbn_mnist.reconstruct(perturbed_data)
 
         # Re-classify the perturbed image
         output = model(perturbed_data)
