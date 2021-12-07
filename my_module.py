@@ -88,7 +88,7 @@ def test(model, device, test_loader, epsilon, params, num_steps=1):
 
     # Calculate final accuracy for this epsilon
     final_acc = correct/float(len(test_loader))
-    print("Epsilon: {}\tTest Accuracy = {} / {} = {}".format(epsilon,
+    print("\nEpsilon: {}\tTest Accuracy = {} / {} = {}".format(epsilon,
           correct, len(test_loader), final_acc))
 
     # Return the accuracy and an adversarial example
