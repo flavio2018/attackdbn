@@ -1,11 +1,7 @@
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as functional
 import tqdm
 
-from flags import get_flags, gen_image
-
-
-# FLAGS = get_flags()
 
 def fgsm_attack(image, epsilon, data_grad):
     # Collect the element-wise sign of the data gradient
@@ -21,7 +17,7 @@ def fgsm_attack(image, epsilon, data_grad):
     return perturbed_image
 
 
-def test(model, device, test_loader, epsilon, FLAGS, num_steps=1):
+def test(model, device, test_loader, epsilon, params, num_steps=1):
     correct = 0
     adv_examples = []
 
@@ -67,7 +63,7 @@ def test(model, device, test_loader, epsilon, FLAGS, num_steps=1):
         # If requested, reconstruct the input iterating forward-backward dynamics
         if num_steps != 1:
             perturbed_data = gen_image(
-                None, FLAGS, model.mnist_model, perturbed_data, num_steps=num_steps, sample=False)[0]
+                None, params, model, perturbed_data, num_steps=num_steps, sample=False)[0]
 
         # Re-classify the perturbed image
         output = model(perturbed_data)
@@ -79,7 +75,7 @@ def test(model, device, test_loader, epsilon, FLAGS, num_steps=1):
             correct += 1
 
             # Special case for saving 0 epsilon examples
-            if (epsilon == 0):  # and (len(adv_examples) < 5):
+            if epsilon == 0:  # and (len(adv_examples) < 5):
                 adv_ex = perturbed_data.squeeze().detach().cpu().numpy()
                 adv_examples.append(
                     (init_pred.item(), final_pred.item(), adv_ex))
@@ -99,14 +95,73 @@ def test(model, device, test_loader, epsilon, FLAGS, num_steps=1):
     return final_acc, adv_examples
 
 
-def test_adv(model, dataloader, FLAGS, epsilons=list([0, .05, .1, .15, .2, .25, .3]), steps=1):
+def test_adv(model, params, epsilons=list([0, .05, .1, .15, .2, .25, .3]), steps=1):
     accuracies = list()
     examples = list()
 
     # Run test for each epsilon
     for eps in epsilons:
-        acc, ex = test(model, device, test_loader, eps, FLAGS, num_steps=steps)
+        acc, ex = test(model, device, test_loader, eps, params, num_steps=steps)
         accuracies.append(acc)
         # examples.append(ex)
 
     return accuracies, examples
+
+
+def gen_image(label, params, model, im_neg, num_steps, sample=False):
+    # gen_image(label, FLAGS, model, data_corrupt, num_steps)
+    # Non allena il modello va solo su e giù e aggiusta l'immagine che fa merda
+    im_noise = torch.randn_like(im_neg).detach()
+
+    im_negs_samples = []
+
+    for i in range(num_steps):
+        im_noise.normal_()
+
+        if params["anneal"]:
+            im_neg = im_neg + 0.001 * (num_steps - i - 1) / num_steps * im_noise
+        else:
+            im_neg = im_neg + 0.001 * im_noise
+
+        # Evaluate the energy of noised images
+        im_neg.requires_grad_(requires_grad=True)
+        energy = model.forward(im_neg, label, read_out=False)
+
+        if params["all_step"]:
+            im_grad = torch.autograd.grad([energy.sum()], [im_neg], create_graph=True)[0]
+        else:
+            # Compute the sum of the gradients of the outputs respect to the inputs
+            im_grad = torch.autograd.grad([energy.sum()], [im_neg])[0]
+
+        if i == num_steps - 1:
+            im_neg_orig = im_neg
+
+            # Here there's the update
+            im_neg = im_neg - params["step_lr"] * im_grad
+
+            # dataset is "mnist", so:
+            n = 100000
+
+            im_neg_kl = im_neg_orig[:n]
+            if sample:
+                pass
+            else:
+                energy = model.forward(im_neg_kl, label, read_out=False)
+                im_grad = torch.autograd.grad([energy.sum()], [im_neg_kl], create_graph=True)[0]
+
+            im_neg_kl = im_neg_kl - params["step_lr"] * im_grad[:n]
+            im_neg_kl = torch.clamp(im_neg_kl, 0, 1)
+        else:
+            im_neg = im_neg - params["step_lr"] * im_grad
+
+        im_neg = im_neg.detach()
+
+        if sample:
+            im_negs_samples.append(im_neg)
+
+        im_neg = torch.clamp(im_neg, 0, 1)
+
+    if sample:
+        return im_neg, im_neg_kl, im_negs_samples, im_grad
+    else:
+        return im_neg, im_neg_kl, im_grad
