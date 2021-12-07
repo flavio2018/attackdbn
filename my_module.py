@@ -5,6 +5,8 @@ import tqdm
 from flags import get_flags, gen_image
 
 
+# FLAGS = get_flags()
+
 def fgsm_attack(image, epsilon, data_grad):
     # Collect the element-wise sign of the data gradient
     sign_data_grad = data_grad.sign()
@@ -19,11 +21,9 @@ def fgsm_attack(image, epsilon, data_grad):
     return perturbed_image
 
 
-def test(model, device, test_loader, epsilon, num_steps=1):
+def test(model, device, test_loader, epsilon, FLAGS, num_steps=1):
     correct = 0
     adv_examples = []
-
-    FLAGS = get_flags()
 
     # Loop over all examples in test set
     for data, target in tqdm.tqdm(test_loader):
@@ -48,7 +48,7 @@ def test(model, device, test_loader, epsilon, num_steps=1):
             continue
 
         # Calculate the loss
-        print(target)
+        # print(target)
 
         loss = F.nll_loss(output, target)
 
@@ -99,13 +99,13 @@ def test(model, device, test_loader, epsilon, num_steps=1):
     return final_acc, adv_examples
 
 
-def test_adv(model, dataloader, epsilons=list([0, .05, .1, .15, .2, .25, .3]), steps=1):
+def test_adv(model, dataloader, FLAGS, epsilons=list([0, .05, .1, .15, .2, .25, .3]), steps=1):
     accuracies = list()
     examples = list()
 
     # Run test for each epsilon
     for eps in epsilons:
-        acc, ex = test(model, device, test_loader, eps, num_steps=steps)
+        acc, ex = test(model, device, test_loader, eps, FLAGS, num_steps=steps)
         accuracies.append(acc)
         # examples.append(ex)
 
