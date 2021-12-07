@@ -44,16 +44,13 @@ import torch.distributed as dist
 
 from torch.nn.parallel import DistributedDataParallel as DDP
 
+
 def get_flags():
     FLAGS = flags.FLAGS
     
     # Distributed training hyperparameters
-    try:
-        flags.DEFINE_integer('nodes', 1,
-            'number of nodes for training')
-    except DuplicateFlagError:
-        print("Flags already defined, skipping")
-        return
+    flags.DEFINE_integer('nodes', 1,
+        'number of nodes for training')
     flags.DEFINE_integer('gpus', 1,
         'number of gpus per nodes')
     flags.DEFINE_integer('node_rank', 0,
@@ -128,76 +125,3 @@ def get_flags():
     flags.DEFINE_integer('cond_idx', 1, 'conditioned index')
     
     return FLAGS
-
-def gen_image(label, FLAGS, model, im_neg, num_steps, sample=False):
-    #gen_image(label, FLAGS, model, data_corrupt, num_steps)
-    #Non allena il modello va solo su e giù e aggiusta l'immagine che fa merda
-    im_noise = torch.randn_like(im_neg).detach()
-
-    im_negs_samples = []
-
-    for i in range(num_steps):
-        im_noise.normal_()
-
-        if FLAGS.anneal:
-            im_neg = im_neg + 0.001 * (num_steps - i - 1) / num_steps * im_noise
-        else:
-            im_neg = im_neg + 0.001 * im_noise
-        
-        #Evaluate the energy of noised images
-        im_neg.requires_grad_(requires_grad=True)
-        energy = model.forward(im_neg, label, read_out=False)
-
-        if FLAGS.all_step:
-            im_grad = torch.autograd.grad([energy.sum()], [im_neg], create_graph=True)[0]
-        else:
-            #Compute the sum of the gradients of the outputs respect to the inputs
-            im_grad = torch.autograd.grad([energy.sum()], [im_neg])[0]
-
-        if i == num_steps - 1:
-            im_neg_orig = im_neg  
-            
-            #Here there's the update
-            im_neg = im_neg - FLAGS.step_lr * im_grad
-
-            if FLAGS.dataset == "cifar10":
-                n = 128
-            elif FLAGS.dataset == "celeba":
-                # Save space
-                n = 128
-            elif FLAGS.dataset == "lsun":
-                # Save space
-                n = 32
-            elif FLAGS.dataset == "object":
-                # Save space
-                n = 32
-            elif FLAGS.dataset == "mnist":
-                n = 100000
-            elif FLAGS.dataset == "imagenet":
-                n = 32
-            elif FLAGS.dataset == "stl":
-                n = 32
-
-            im_neg_kl = im_neg_orig[:n]
-            if sample:
-                pass
-            else:
-                energy = model.forward(im_neg_kl, label, read_out=False)
-                im_grad = torch.autograd.grad([energy.sum()], [im_neg_kl], create_graph=True)[0]
-
-            im_neg_kl = im_neg_kl - FLAGS.step_lr * im_grad[:n]
-            im_neg_kl = torch.clamp(im_neg_kl, 0, 1)
-        else:
-            im_neg = im_neg - FLAGS.step_lr * im_grad
-
-        im_neg = im_neg.detach()
-
-        if sample:
-            im_negs_samples.append(im_neg)
-
-        im_neg = torch.clamp(im_neg, 0, 1)
-
-    if sample:
-        return im_neg, im_neg_kl, im_negs_samples, im_grad
-    else:
-        return im_neg, im_neg_kl, im_grad
